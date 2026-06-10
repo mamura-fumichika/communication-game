@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>コミュニケーション形態判断ゲーム</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+    .card {
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      background: #e3f2fd;
+      border: 1px solid #90caf9;
+    }
+    .card-img {
+      max-width: 100%;
+      max-height: 400px;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto 10px;
+      border-radius: 6px;
+    }
+    .card-title {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    .card-desc {
+      font-size: 14px;
+      color: #555;
+    }
+    .question-block {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 6px;
+      background: #fafafa;
+      border: 1px solid #ddd;
+    }
+    .question-title {
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    button.option {
+      padding: 6px 12px;
+      border-radius: 4px;
+      border: 1px solid #90a4ae;
+      background: #eceff1;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button.option.selected {
+      background: #1976d2;
+      color: #fff;
+      border-color: #1565c0;
+    }
+    button.option.correct {
+      background: #2e7d32;
+      color: #fff;
+      border-color: #1b5e20;
+    }
+    button.option.wrong {
+      background: #c62828;
+      color: #fff;
+      border-color: #b71c1c;
+    }
+    .status {
+      margin-top: 8px;
+      font-size: 14px;
+    }
+    .status.correct {
+      color: #2e7d32;
+      font-weight: bold;
+    }
+    .status.wrong {
+      color: #c62828;
+      font-weight: bold;
+    }
+    .explanation {
+      margin-top: 4px;
+      font-size: 13px;
+      color: #555;
+    }
+    .footer {
+      margin-top: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: #555;
+    }
+    .footer button {
+      padding: 6px 14px;
+      border-radius: 4px;
+      border: none;
+      background: #1976d2;
+      color: #fff;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .footer button:disabled {
+      background: #b0bec5;
+      cursor: default;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>コミュニケーションの形態判断ゲーム</h1>
+  <p>次のサービスについて、「同期／非同期」と「人数の形態」を選んでみよう。</p>
+
+  <div id="card-area" class="card">
+    <img id="card-image" src="" alt="" class="card-img">
+    <div class="card-title" id="card-title"></div>
+    <div class="card-desc" id="card-desc"></div>
+  </div>
+
+  <div class="question-block">
+    <div class="question-title">① 同期性はどれ？</div>
+    <div class="btn-group" id="sync-options">
+      <button class="option" data-value="同期">同期（すぐ反応が返ってくる）</button>
+      <button class="option" data-value="非同期">非同期（いつ受信したかわからない）</button>
+      <button class="option" data-value="両方">両方ありうる</button>
+    </div>
+
+    <div class="question-title">② 人数の形態はどれ？</div>
+    <div class="btn-group" id="mode-options">
+      <button class="option" data-value="1対1中心">1対1が中心</button>
+      <button class="option" data-value="1対多中心">1対多が中心</button>
+      <button class="option" data-value="多対多">多対多（みんなでやり取り）</button>
+    </div>
+
+    <div id="status" class="status"></div>
+    <div id="explanation" class="explanation"></div>
+  </div>
+
+  <div class="footer">
+    <div id="progress"></div>
+    <button id="check-btn">答え合わせ</button>
+    <button id="next-btn" disabled>次の問題へ</button>
+  </div>
+</div>
+
+<script>
+  const cards = [
+    { name: "SNS（Instagram, X など）", desc: "写真や文章を投稿し、コメントや「いいね」でやり取りできるサービス。", img: "SNS.png", sync: "両方", mode: "多対多", explain: "SNS は投稿は非同期ですが、コメントやDMなどで同期的なやり取りもできます。" },
+    { name: "ブログ", desc: "日記や記事を公開し、読者がコメントできるサービス。", img: "ブログ.png", sync: "非同期", mode: "1対多中心", explain: "ブログは書いた記事を多くの人が読む1対多の非同期コミュニケーションです。" },
+    { name: "動画共有サイト（YouTubeなど）", desc: "動画をアップロードし、不特定多数と共有できるサイト。", img: "動画共有サイト.jpg", sync: "非同期", mode: "1対多中心", explain: "動画を投稿し、多くの人が視聴する1対多の非同期コミュニケーションです。" },
+    { name: "メッセージアプリ（LINEなど）", desc: "テキストメッセージや通話などでやり取りできるアプリ。", img: "メッセージアプリ.png", sync: "両方", mode: "1対1中心", explain: "チャットは非同期、通話は同期的で、1対1が中心です。" },
+    { name: "掲示板", desc: "不特定多数が書き込み、スレッド形式でやり取りするサービス。", img: "掲示板.png", sync: "非同期", mode: "多対多", explain: "掲示板は多くの人が書き込み、時間を空けて読む非同期の多対多です。" },
+    { name: "ライブ配信", desc: "動画をリアルタイムで配信し、コメントでやり取りできるサービス。", img: "ライブ配信.png", sync: "同期", mode: "1対多中心", explain: "配信者1人に対して多くの視聴者がリアルタイムで視聴する同期的な1対多です。" },
+    { name: "オンラインゲームのチャット", desc: "ゲーム内でプレイヤー同士がメッセージを送り合う機能。", img: "オンラインゲーム.png", sync: "同期", mode: "多対多", explain: "同じゲーム空間で複数人が同時に会話する同期的な多対多です。" },
+    { name: "電子メール", desc: "宛先・CC・BCCを指定してメッセージを送る仕組み。", img: "電子メール.png", sync: "非同期", mode: "1対1中心", explain: "メールは送ってから相手がいつ読むかわからない非同期です。" }
+  ];
+
+  let currentIndex = 0;
+  let selectedSync = null;
+  let selectedMode = null;
+  let correctCount = 0;
+
+  const cardImage = document.getElementById("card-image");
+  const cardTitle = document.getElementById("card-title");
+  const cardDesc = document.getElementById("card-desc");
+  const syncOptions = document.getElementById("sync-options");
+  const modeOptions = document.getElementById("mode-options");
+  const statusEl = document.getElementById("status");
+  const explanationEl = document.getElementById("explanation");
+  const progressEl = document.getElementById("progress");
+  const checkBtn = document.getElementById("check-btn");
+  const nextBtn = document.getElementById("next-btn");
+
+  function loadCard(index) {
+    const card = cards[index];
+    cardImage.src = card.img;
+    cardImage.alt = card.name;
+    cardTitle.textContent = card.name;
+    cardDesc.textContent = card.desc;
+    progressEl.textContent = `問題 ${index + 1} / ${cards.length}`;
+    statusEl.textContent = "";
+    explanationEl.textContent = "";
+    selectedSync = null;
+    selectedMode = null;
+    resetButtons(syncOptions);
+    resetButtons(modeOptions);
+    checkBtn.disabled = false;
+    nextBtn.disabled = true;
+  }
+
+  function resetButtons(groupEl) {
+    groupEl.querySelectorAll("button.option").forEach(btn => {
+      btn.classList.remove("selected", "correct", "wrong");
+      btn.disabled = false;
+    });
+  }
+
+  function handleOptionClick(group, value, button) {
+    if (group === "sync") {
+      selectedSync = value;
+      syncOptions.querySelectorAll("button.option").forEach(btn => btn.classList.remove("selected"));
+      button.classList.add("selected");
+    } else {
+      selectedMode = value;
+      modeOptions.querySelectorAll("button.option").forEach(btn => btn.classList.remove("selected"));
+      button.classList.add("selected");
+    }
+  }
+
+  syncOptions.addEventListener("click", (e) => {
+    if (e.target.matches("button.option")) {
+      handleOptionClick("sync", e.target.dataset.value, e.target);
+    }
+  });
+
+  modeOptions.addEventListener("click", (e) => {
+    if (e.target.matches("button.option")) {
+      handleOptionClick("mode", e.target.dataset.value, e.target);
+    }
+  });
+
+  checkBtn.addEventListener("click", () => {
+    if (!selectedSync || !selectedMode) {
+      statusEl.textContent = "両方の質問に答えてください。";
+      statusEl.className = "status wrong";
+      return;
+    }
+
+    const card = cards[currentIndex];
+    let allCorrect = true;
+
+    syncOptions.querySelectorAll("button.option").forEach(btn => {
+      btn.disabled = true;
+      if (btn.dataset.value === card.sync) btn.classList.add("correct");
+      if (btn.dataset.value === selectedSync && selectedSync !== card.sync) {
+        btn.classList.add("wrong");
+        allCorrect = false;
+      }
+    });
+
+    modeOptions.querySelectorAll("button.option").forEach(btn => {
+      btn.disabled = true;
+      if (btn.dataset.value === card.mode) btn.classList.add("correct");
+      if (btn.dataset.value === selectedMode && selectedMode !== card.mode) {
+        btn.classList.add("wrong");
+        allCorrect = false;
+      }
+    });
+
+    if (allCorrect) {
+      statusEl.textContent = "正解！よく理解できています。";
+      statusEl.className = "status correct";
+      correctCount++;
+    } else {
+      statusEl.textContent = "おしい！正解を確認してみよう。";
+      statusEl.className = "status wrong";
+    }
+
+    explanationEl.textContent = card.explain;
+    checkBtn.disabled = true;
+    nextBtn.disabled = false;
+  });
+
+  nextBtn.addEventListener("click", () => {
+    if (currentIndex < cards.length - 1) {
+      currentIndex++;
+      loadCard(currentIndex);
+    } else {
+      const rate = Math.round((correctCount / cards.length) * 100);
+      alert(`ゲーム終了！\n正答率：${rate}%`);
+    }
+  });
+
+  loadCard(currentIndex);
+</script>
+</body>
+</html>
